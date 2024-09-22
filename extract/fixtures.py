@@ -35,7 +35,7 @@ if not fixtures:
     
 today_in_seconds = datetime.now().strftime('%Y%m%d_%H%M%S')
 csv_file_name = f'{today_in_seconds}_temp.csv'
-csv_file_path = os.path.join('temp', csv_file_name)
+csv_file_path = os.path.join('temp/extract/fixtures', csv_file_name)
 
 
 encabezados = [

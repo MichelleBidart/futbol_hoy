@@ -1,3 +1,4 @@
 .python-version
 .venv/
 config/config.properties
+temp
