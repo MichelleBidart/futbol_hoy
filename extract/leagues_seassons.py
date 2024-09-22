@@ -52,11 +52,9 @@ with open(leagues_csv_file, mode='w', newline='', encoding='utf-8') as file_leag
         writer.writerow([
             league_info['id'],
             league_info['name'],
+            country_info['code'], 
             league_info['type'],
             league_info['logo'],
-            country_info['name'],
-            country_info['code'],
-            country_info['flag']
         ])
 
 
