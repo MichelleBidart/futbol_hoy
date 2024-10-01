@@ -1,4 +1,7 @@
 .python-version
-.venv/
+.venv
 config/config.properties
 temp
+venv
+airflow
+.env/

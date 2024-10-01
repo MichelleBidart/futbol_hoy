@@ -1,20 +1,28 @@
 from sqlalchemy import create_engine
 import configparser
+import psycopg2
 
 config = configparser.ConfigParser()
 config.read('config/config.properties')
 
-# Obtener las variables de conexión de Redshift desde el archivo de configuración
 redshift_user = config.get('REDSHIFT', 'user')
 redshift_password = config.get('REDSHIFT', 'password')
 redshift_host = config.get('REDSHIFT', 'host')
 redshift_port = config.get('REDSHIFT', 'port')
 redshift_dbname = config.get('REDSHIFT', 'dbname')
+redshift_schema = config.get('REDSHIFT', 'schema')
 
-# Crear el motor con SQLAlchemy
-engine = create_engine(
-    f"postgresql+psycopg2://{redshift_user}:{redshift_password}@{redshift_host}:{redshift_port}/{redshift_dbname}"
+
+connection = psycopg2.connect(
+dbname=redshift_dbname,
+user=redshift_user,
+password=redshift_password,
+host=redshift_host,
+port=redshift_port
 )
+print("Conexión exitosa con psycopg2")
+# Crear el motor con SQLAlchemy
+engine = create_engine('postgresql+psycopg2://', creator=lambda: connection)
 
 try:
     # Probar la conexión con SQLAlchemy
