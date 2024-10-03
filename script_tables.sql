@@ -19,11 +19,14 @@ CREATE TABLE IF NOT EXISTS "2024_michelle_bidart_schema".venue (
     address VARCHAR(255)
 );
 
-CREATE TABLE IF NOT EXISTS "2024_michelle_bidart_schema".league (
-    id INT PRIMARY KEY,
-    name VARCHAR(255),
-    type VARCHAR(50),
-    logo VARCHAR(255)
+CREATE TABLE "2024_michelle_bidart_schema".leagues (
+    league_id INT PRIMARY KEY,
+    league_name VARCHAR(255),
+    country VARCHAR(255),
+    season_year INT,
+    start_date DATE,
+    end_date DATE,
+    current BOOLEAN
 );
 
 CREATE TABLE IF NOT EXISTS "2024_michelle_bidart_schema".match (
