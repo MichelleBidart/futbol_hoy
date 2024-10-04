@@ -53,7 +53,7 @@ def save_leagues_redshift(**kwargs):
     if not leagues_data:
         raise ValueError('No leagues data found in XCom.')
 
-    df_leagues = pd.DataFrame(leagues_data)
+    df_leagues = pd.DataFrame(leagues_data).drop_duplicates()
 
 
     redshift_user = Variable.get("redshift_user")
@@ -75,12 +75,12 @@ def save_leagues_redshift(**kwargs):
 
     engine = create_engine('postgresql+psycopg2://', creator=lambda: connection)
 
-    df_leagues.to_sql('league', engine, schema=redshift_schema, if_exists='replace', index=False)
+    df_leagues.to_sql('league', engine, schema=redshift_schema, if_exists='append', index=False)
     print("Leagues data saved to Redshift")
 
 with DAG(
     dag_id='all_leagues_argentina_dag',
-    schedule_interval='@daily',
+    schedule_interval='@monthly',
     start_date=days_ago(1),
     catchup=False,
     default_args={
