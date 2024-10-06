@@ -31,15 +31,20 @@ CREATE TABLE IF NOT EXISTS "2024_michelle_bidart_schema".league (
     PRIMARY KEY (league_id, season_year)
 );
 
+CREATE TABLE IF NOT EXISTS "2024_michelle_bidart_schema".status (
+    id INT PRIMARY KEY,  
+    description VARCHAR(255)
+);
+
 CREATE TABLE IF NOT EXISTS "2024_michelle_bidart_schema".match (
     id INT PRIMARY KEY,
     date DATE,
     timezone VARCHAR(50),
     referee VARCHAR(255),
-    league_id INT,
     season_year INT,
+    league_id INT,
     venue_id INT REFERENCES "2024_michelle_bidart_schema".venue(id),
-    status VARCHAR(50),
+    status_id INT REFERENCES "2024_michelle_bidart_schema".status(id),  -- Clave foránea hacia 'status'
     team_home_id INT REFERENCES "2024_michelle_bidart_schema".team(id),
     team_away_id INT REFERENCES "2024_michelle_bidart_schema".team(id),
     home_score INT,
@@ -48,5 +53,7 @@ CREATE TABLE IF NOT EXISTS "2024_michelle_bidart_schema".match (
     penalty_away INT,
     period_first INT,
     period_second INT,
-    FOREIGN KEY (league_id, season_year) REFERENCES "2024_michelle_bidart_schema".league(league_id, season_year)
+    FOREIGN KEY (league_id, season_year) REFERENCES "2024_michelle_bidart_schema".league(league_id, season_year)  -- Clave foránea compuesta hacia 'league'
 );
+
+

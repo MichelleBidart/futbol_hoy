@@ -4,7 +4,7 @@ import csv
 import psycopg2
 import pandas as pd
 from sqlalchemy import create_engine
-
+import os
 
 def return_api_url(endpoint):
     config = configparser.ConfigParser()
@@ -37,7 +37,8 @@ def extract_teams_venues():
     response = requests.get(return_api_url('teams'), headers=return_headers(), params=params)
     teams = response.json()['response']
 
-   
+    os.makedirs('./temp/extract/teams', exist_ok=True)
+    os.makedirs('./temp/extract/venues', exist_ok=True)
     teams_csv_path = './temp/extract/teams/teams_argentina.csv'
     venues_csv_path = './temp/extract/venues/venues_argentina.csv'
 
@@ -77,7 +78,8 @@ def transform_venues(csv_path):
 
 def load_to_redshift(csv_path, table_name):
     config = configparser.ConfigParser()
-    config.read('config/config.properties')
+    #config.read('config/config.properties')
+    config.read('/opt/airflow/config/config.properties')
 
     redshift_user = config.get('REDSHIFT', 'user')
     redshift_password = config.get('REDSHIFT', 'password')

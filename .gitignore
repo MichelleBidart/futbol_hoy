@@ -4,3 +4,6 @@ config/config.properties
 temp
 venv
 .env/
+airflow/dags/__pycache__/
+airflow/logs/
+logs/

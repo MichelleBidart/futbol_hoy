@@ -4,10 +4,12 @@ import csv
 import psycopg2
 import pandas as pd
 from sqlalchemy import create_engine
+import os
 
 def return_api_url(endpoint):
     config = configparser.ConfigParser()
-    config.read('config/config.properties')
+    #config = configparser.ConfigParser()
+    config.read('/opt/airflow/config/config.properties')
 
     api_base_url = config.get('API_FOOTBALL', 'url')
     api_url = f"{api_base_url}/{endpoint}"
@@ -31,6 +33,7 @@ def extract_countries():
     response = requests.get(return_api_url('countries'), headers=return_headers())
     countries = response.json()['response']
     
+    os.makedirs('./temp/extract/countries', exist_ok=True)
 
     csv_path = './temp/extract/countries/countries.csv'
     with open(csv_path, mode='w', newline='', encoding='utf-8') as file:
