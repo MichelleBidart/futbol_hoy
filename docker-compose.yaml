@@ -77,6 +77,7 @@ x-airflow-common:
     - ./airflow/logs:/opt/airflow/logs
     - ./airflow/config:/opt/airflow/config
     - ./airflow/plugins:/opt/airflow/plugins
+    - ./etl:/opt/airflow/etl
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -190,14 +191,20 @@ services:
     entrypoint: /bin/bash
     # yamllint disable rule:line-length
     command:
-      - -c
-      - |
-        airflow db init &&
-        PGPASSWORD='${REDSHIFT_PASSWORD}' psql -h ${REDSHIFT_HOST} -p ${REDSHIFT_PORT} -U ${REDSHIFT_USER} -d ${REDSHIFT_DBNAME} -f /opt/airflow/scripts/script_tables.sql &&
-        python /opt/airflow/scripts/etl_countries.py &&
-        python /opt/airflow/scripts/etl_teams_venues.py
+    - -c
+    - |
+      airflow db init &&
+      PGPASSWORD='${REDSHIFT_PASSWORD}' psql -h ${REDSHIFT_HOST} -p ${REDSHIFT_PORT} -U ${REDSHIFT_USER} -d ${REDSHIFT_DBNAME} -f /opt/airflow/scripts/script_tables.sql &&
+      python /opt/airflow/etl/etl_countries.py &&
+      python /opt/airflow/etl/etl_teams_venues.py
     environment:
       <<: *airflow-common-env
+      REDSHIFT_USER: ${REDSHIFT_USER}
+      REDSHIFT_PASSWORD: ${REDSHIFT_PASSWORD}
+      REDSHIFT_HOST: ${REDSHIFT_HOST}
+      REDSHIFT_PORT: ${REDSHIFT_PORT}
+      REDSHIFT_DBNAME: ${REDSHIFT_DBNAME}
+      REDSHIFT_SCHEMA: ${REDSHIFT_SCHEMA}
       _AIRFLOW_DB_MIGRATE: 'true'
       _AIRFLOW_WWW_USER_CREATE: 'true'
       _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}

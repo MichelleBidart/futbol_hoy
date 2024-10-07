@@ -1,41 +1,21 @@
-import configparser
+import api_url_configurations as api_url_configurations 
 import requests
 import csv
-import psycopg2
+import redshift_utils as redshift_utils
 import pandas as pd
-from sqlalchemy import create_engine
 import os
-
-def return_api_url(endpoint):
-    config = configparser.ConfigParser()
-    #config = configparser.ConfigParser()
-    config.read('/opt/airflow/config/config.properties')
-
-    api_base_url = config.get('API_FOOTBALL', 'url')
-    api_url = f"{api_base_url}/{endpoint}"
-    print(f"La URL de la API es: {api_url}")
-
-    return api_url
-
-def return_headers():
-    config = configparser.ConfigParser()
-    config.read('config/config.properties')
-
-    api_key = config.get('API_FOOTBALL', 'api_key')
-
-    headers = {
-        'x-apisports-key': api_key
-    }
-    return headers
+import awswrangler as wr
 
 
 def extract_countries():
-    response = requests.get(return_api_url('countries'), headers=return_headers())
+    url, headers = api_url_configurations.get_api_url_headers()
+    response = requests.get(f'{url}/countries', headers=headers) 
     countries = response.json()['response']
     
     os.makedirs('./temp/extract/countries', exist_ok=True)
 
     csv_path = './temp/extract/countries/countries.csv'
+    
     with open(csv_path, mode='w', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
         writer.writerow(['name', 'code'])
@@ -61,34 +41,30 @@ def transform_countries(csv_path):
     return csv_path_argentina
 
 
+
 def load_to_redshift(csv_path, table_name):
-    config = configparser.ConfigParser()
-    config.read('config/config.properties')
-    
+    conn = redshift_utils.get_redshift_connection()
+    schema = redshift_utils.get_schema()
 
-    redshift_user = config.get('REDSHIFT', 'user')
-    redshift_password = config.get('REDSHIFT', 'password')
-    redshift_host = config.get('REDSHIFT', 'host')
-    redshift_port = config.get('REDSHIFT', 'port')
-    redshift_dbname = config.get('REDSHIFT', 'dbname')
-    redshift_schema = config.get('REDSHIFT', 'schema')
+    with conn.cursor() as cursor:
+        cursor.execute(f'DELETE FROM "{schema}"."{table_name}"')
+        conn.commit()
+        print(f"Datos eliminados de la tabla {schema}.{table_name}.")
 
-
-    connection = psycopg2.connect(
-    dbname=redshift_dbname,
-    user=redshift_user,
-    password=redshift_password,
-    host=redshift_host,
-    port=redshift_port
-    )
-    print("Conexión exitosa con psycopg2")
-
-    engine = create_engine('postgresql+psycopg2://', creator=lambda: connection)
-    
     df = pd.read_csv(csv_path)
     
-    df.to_sql(table_name, engine, index=False, if_exists='append', schema=redshift_schema)
-    print(f"Datos cargados en la tabla {redshift_schema}.{table_name}")
+    wr.redshift.to_sql(
+        df=df,
+        con=conn,
+        table=table_name,
+        schema=schema,
+        mode='append', 
+        use_column_names=True,
+        lock=True,
+        index=False
+    )
+
+    print(f"Datos cargados en la tabla {schema}.{table_name}")
 
 
 
@@ -96,11 +72,11 @@ def etl_countries():
  
     csv_path = extract_countries()
 
-    print("csv_path retornado: ", csv_path)
+    print("csv_path return: ", csv_path)
 
     argentina_csv_path = transform_countries(csv_path)
 
-    print("argentina_csv_path retornado: ", argentina_csv_path)
+    print("argentina_csv_path return: ", argentina_csv_path)
     
     load_to_redshift(argentina_csv_path, 'country')
 

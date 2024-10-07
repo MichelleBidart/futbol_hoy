@@ -3,7 +3,11 @@
 config/config.properties
 temp
 venv
-.env/
+.env
 airflow/dags/__pycache__/
 airflow/logs/
 logs/
+.env_backup/
+.vscode/
+airflow/etl/
+etl/__pycache__/

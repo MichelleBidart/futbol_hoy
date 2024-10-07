@@ -1,7 +1,12 @@
-Se crea una aplicacion para saber el fixture de los partidos de equipos argentinos
+Se crea una aplicacion para hacer el analisis de los partidos de futbol de argentina
 
-api dinamica: https://www.api-football.com/
+se utilizo la api dinamica: https://www.api-football.com/
 
-DER
-![alt text](image.png)
+Se utilizo un diagrama estrella
+    DER
+    ![alt text](image.png)
 
+
+ejecutar el proyecto de forma local
+    
+    docker-compose up --build
