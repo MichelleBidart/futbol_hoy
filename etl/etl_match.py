@@ -27,7 +27,11 @@ def extract_fixtures(fixture_date):
 def transform_fixtures(fixtures):
 
     if not fixtures:
-        raise ValueError('No fixture data was pulled.')
+        print('No fixture data was pulled.')
+        return None, None
+    
+    conn = redshift_utils.get_redshift_connection()
+    schema = Variable.get("redshift_schema")
 
     match_data = []
     status_data = []
@@ -41,6 +45,16 @@ def transform_fixtures(fixtures):
 
         home_score = (score['halftime']['home'] or 0) + (score['fulltime']['home'] or 0) + (score['extratime']['home'] or 0)
         away_score = (score['halftime']['away'] or 0) + (score['fulltime']['away'] or 0) + (score['extratime']['away'] or 0)
+
+        match_id = fixture['id']
+
+        existing_match = pd.read_sql(
+            f'SELECT 1 FROM "{schema}".match WHERE id = {match_id}', con=conn
+        )
+
+        if not existing_match.empty:
+            continue
+
 
         match_data.append({
             'id': fixture['id'],
@@ -72,10 +86,14 @@ def transform_fixtures(fixtures):
 
 def load_fixtures_to_redshift(match_data, status_data):
 
+    if not match_data:
+        print("no data")
+        return
+
     conn = redshift_utils.get_redshift_connection()
 
-    df_match = pd.DataFrame(match_data).drop_duplicates()
-    df_status = pd.DataFrame(status_data).drop_duplicates()
+    df_match = pd.DataFrame(match_data)
+    df_status = pd.DataFrame(status_data)
 
     schema = Variable.get("redshift_schema")
 

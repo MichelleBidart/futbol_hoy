@@ -51,11 +51,16 @@ def save_leagues_redshift(leagues_data):
 
     conn = redshift_utils.get_redshift_connection()
     schema = Variable.get("redshift_schema")
+    table_name= "league"
+    with conn.cursor() as cursor:
+        cursor.execute(f'DELETE FROM "{schema}"."{table_name}"')
+        conn.commit()
+        print(f"Datos eliminados de la tabla {schema}.{table_name}.")
 
     wr.redshift.to_sql(
         df=df_leagues,
         con=conn,
-        table='league',
+        table=table_name,
         schema=schema,
         mode='append', 
         use_column_names=True,

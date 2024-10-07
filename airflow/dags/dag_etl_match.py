@@ -3,6 +3,7 @@ from airflow.operators.python import PythonOperator
 from airflow.utils.dates import days_ago
 from datetime import timedelta
 import etl.etl_match as etl_match
+import datetime
 
 def extract_fixtures(execution_date, **kwargs):
 
@@ -32,8 +33,9 @@ def load_fixtures_to_redshift(**kwargs):
 with DAG(
     dag_id='daily_fixtures_etl_dag_argentina',
     schedule_interval='@daily',
-    start_date=days_ago(1),
-    catchup=False,
+    start_date=datetime.datetime(2024, 1, 1), 
+    catchup=True,
+    max_active_runs=1, 
     default_args={
         'depends_on_past': False,
         'retries': 1
