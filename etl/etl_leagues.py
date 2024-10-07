@@ -55,7 +55,7 @@ def save_leagues_redshift(leagues_data):
     wr.redshift.to_sql(
         df=df_leagues,
         con=conn,
-        table='leagues',
+        table='league',
         schema=schema,
         mode='append', 
         use_column_names=True,
