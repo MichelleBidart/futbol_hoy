@@ -1,48 +1,40 @@
-import api_url_configurations as api_url_configurations 
+import etl.api_url_configurations as api_url_configurations 
 import requests
-import csv
-import redshift_utils as redshift_utils
+import etl.redshift_utils as redshift_utils
 import pandas as pd
-import os
 import awswrangler as wr
+from dotenv import load_dotenv
+import os
 
+load_dotenv('/opt/airflow/.env')
+#load_dotenv('.env')
 
 def extract_countries():
+    """
+    Extrae datos de países
+
+    Returns:
+        list: Una lista de diccionarios con los datos de los países extraídos de la API.
+    """
     url, headers = api_url_configurations.get_api_url_headers()
     response = requests.get(f'{url}/countries', headers=headers) 
-    countries = response.json()['response']
+    if response.status_code !=200:
+        raise Exception(f"response error while traying to bring back {url}/countries ")
+    return response.json()['response']
+
+
+def transform_countries(countries):
+
+    countries_df = pd.DataFrame(countries)
     
     os.makedirs('./temp/extract/countries', exist_ok=True)
 
-    csv_path = './temp/extract/countries/countries.csv'
-    
-    with open(csv_path, mode='w', newline='', encoding='utf-8') as file:
-        writer = csv.writer(file)
-        writer.writerow(['name', 'code'])
-        for country in countries:
-            writer.writerow([country['name'], country['code']])
-    
-    print(f"Datos de países guardados en {csv_path}")
-    return csv_path
-
-
-def transform_countries(csv_path):
-
-    csv_path_argentina = './temp/extract/countries/countries_arg.csv'
-
-    countries_df = pd.read_csv(csv_path)
-
-    argentina_df = countries_df[countries_df['code'] == 'AR']
-
-    print(argentina_df)
-
-    csv_path = argentina_df.to_csv('./temp/extract/countries/countries_arg.csv', index=False)
-
-    return csv_path_argentina
+    countries_df.to_csv(os.getenv('TEMP_CSV_COUNTRIES'), index=False)
 
 
 
-def load_to_redshift(csv_path, table_name):
+def load_to_redshift():
+    table_name = 'country'
     conn = redshift_utils.get_redshift_connection()
     schema = redshift_utils.get_schema()
 
@@ -51,8 +43,7 @@ def load_to_redshift(csv_path, table_name):
         conn.commit()
         print(f"Datos eliminados de la tabla {schema}.{table_name}.")
 
-    df = pd.read_csv(csv_path)
-    
+    df = pd.read_csv(os.getenv('TEMP_CSV_COUNTRIES'))
     wr.redshift.to_sql(
         df=df,
         con=conn,
@@ -70,15 +61,11 @@ def load_to_redshift(csv_path, table_name):
 
 def etl_countries():
  
-    csv_path = extract_countries()
+    countries = extract_countries()
 
-    print("csv_path return: ", csv_path)
-
-    argentina_csv_path = transform_countries(csv_path)
-
-    print("argentina_csv_path return: ", argentina_csv_path)
+    transform_countries(countries)
     
-    load_to_redshift(argentina_csv_path, 'country')
+    load_to_redshift()
 
 
 if __name__ == '__main__':

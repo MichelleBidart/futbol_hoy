@@ -1,13 +1,8 @@
 .python-version
 .venv
-config/config.properties
 temp
-venv
 .env
-airflow/dags/__pycache__/
-airflow/logs/
+airflow/
 logs/
-.env_backup/
 .vscode/
-airflow/etl/
-etl/__pycache__/
+etl/
