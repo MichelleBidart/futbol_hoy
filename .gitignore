@@ -2,7 +2,12 @@
 .venv
 temp
 .env
-airflow/
+airflow/dags/__pycache__/
+airflow/logs/
 logs/
+.env_backup/
 .vscode/
-etl/
+tests/__pycache__/
+etl/__pycache__/
+__pycache__/
+*.pyc
