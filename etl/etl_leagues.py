@@ -7,7 +7,7 @@ import utils.delete_table as delete_table
 import awswrangler as wr
 
 def extract_leagues_etl():
-    url, headers = api_url_configurations()
+    url, headers = api_url_configurations.get_api_url_headers()
     params = {
         'country': 'Argentina'
     }
