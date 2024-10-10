@@ -1,24 +1,20 @@
 import requests
 import pandas as pd
 from airflow.models import Variable
-import redshift_utils as redshift_utils
+import utils.redshift_utils as redshift_utils
+import utils.api_url_configurations as api_url_configurations
+import utils.delete_table as delete_table
 import awswrangler as wr
 
 def extract_leagues_etl():
-    url = "https://v3.football.api-sports.io/leagues"
+    url, headers = api_url_configurations()
     params = {
         'country': 'Argentina'
     }
-    api_key = Variable.get("x-apisports-key")
-    headers = {
-        'x-apisports-key': api_key
-    }
-    
-    response = requests.get(url, headers=headers, params=params)
+    response = requests.get(url + "leagues", headers=headers, params=params)
     data = response.json()
 
     leagues = data['response']
-
     return leagues
 
 def transform_leagues(leagues):
@@ -51,18 +47,15 @@ def save_leagues_redshift(leagues_data):
 
     conn = redshift_utils.get_redshift_connection()
     schema = Variable.get("redshift_schema")
-    table_name= "league"
-    with conn.cursor() as cursor:
-        cursor.execute(f'DELETE FROM "{schema}"."{table_name}"')
-        conn.commit()
-        print(f"Datos eliminados de la tabla {schema}.{table_name}.")
+    table_name = "league"
+    delete_table(conn, table_name, schema )
 
     wr.redshift.to_sql(
         df=df_leagues,
         con=conn,
         table=table_name,
         schema=schema,
-        mode='append', 
+        mode=table_name, 
         use_column_names=True,
         lock=True,
         index=False

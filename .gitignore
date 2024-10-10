@@ -11,3 +11,4 @@ tests/__pycache__/
 etl/__pycache__/
 __pycache__/
 *.pyc
+/airflow/airflow.cfg

@@ -72,12 +72,17 @@ x-airflow-common:
     # The following line can be used to set a custom config file, stored in the local config folder
     # If you want to use it, outcomment it and replace airflow.cfg with the name of your config file
     # AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
+  env_file:
+    - ./.env
+  
   volumes:
     - ./airflow/dags:/opt/airflow/dags
     - ./airflow/logs:/opt/airflow/logs
     - ./airflow/config:/opt/airflow/config
     - ./airflow/plugins:/opt/airflow/plugins
     - ./etl:/opt/airflow/etl
+    - ./scripts:/opt/airflow/scripts
+    - ./utils:/opt/airflow/utils
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -193,6 +198,14 @@ services:
     command:
     - -c
     - |
+      airflow db init &&
+      airflow users create \
+        --username admin \
+        --firstname admin \
+        --lastname admin \
+        --role Admin \
+        --email bidart.michelle@gmail.com \
+        --password admin123 &&
       airflow db init &&
       PGPASSWORD='${REDSHIFT_PASSWORD}' psql -h ${REDSHIFT_HOST} -p ${REDSHIFT_PORT} -U ${REDSHIFT_USER} -d ${REDSHIFT_DBNAME} -f /opt/airflow/scripts/script_tables.sql &&
       python /opt/airflow/etl/etl_countries.py &&

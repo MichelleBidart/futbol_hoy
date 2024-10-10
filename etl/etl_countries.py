@@ -1,6 +1,6 @@
-import etl.api_url_configurations as api_url_configurations 
+import utils.api_url_configurations as api_url_configurations 
 import requests
-import etl.redshift_utils as redshift_utils
+import utils.redshift_utils as redshift_utils
 import pandas as pd
 import awswrangler as wr
 from dotenv import load_dotenv
@@ -37,7 +37,6 @@ def extract_countries() -> list:
     df_countries.to_parquet(parquet_path, index=False)
 
     print(f"Datos de países guardados en formato Parquet en: {parquet_path}")
-    print(countries)
 
     return countries
 

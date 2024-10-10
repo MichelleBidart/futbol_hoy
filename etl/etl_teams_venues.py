@@ -1,74 +1,115 @@
+import utils.api_url_configurations as api_url_configurations
 import requests
-import csv
+import utils.redshift_utils as redshift_utils
 import pandas as pd
-import os
-from dotenv import load_dotenv
-import api_url_configurations
-import redshift_utils
 import awswrangler as wr
+from dotenv import load_dotenv
+import os
+from typing import List, Dict
 
 load_dotenv('/opt/airflow/.env')
+#load_dotenv('.env')
 
-
-def extract_teams_venues():
-
+def extract_teams_venues() -> tuple:
+    """
+    Extrae datos de equipos y estadios desde la API y los guarda en archivos Parquet.
+    
+    Returns:
+        tuple: Rutas de los archivos Parquet de equipos y estadios.
+    """
     params = {
         'country': 'Argentina'
     }
     url, headers = api_url_configurations.get_api_url_headers()
     response = requests.get(f'{url}/teams', headers=headers, params=params)
+
+    if response.status_code != 200:
+        raise Exception(f"Error al obtener los datos de {url}teams")
+
     teams = response.json()['response']
-
-    os.makedirs('./temp/extract/teams', exist_ok=True)
-    os.makedirs('./temp/extract/venues', exist_ok=True)
-    teams_csv_path = './temp/extract/teams/teams_argentina.csv'
-    venues_csv_path = './temp/extract/venues/venues_argentina.csv'
-
-    with open(teams_csv_path, mode='w', newline='', encoding='utf-8') as teams_file:
-        teams_writer = csv.writer(teams_file)
-        teams_writer.writerow(['id', 'name', 'country', 'logo', 'stadium_id'])
-        for team in teams:
-            teams_writer.writerow([team['team']['id'], team['team']['name'], team['team']['country'], team['team']['logo'], team['venue']['id']])
     
-    print(f"Datos de equipos de Argentina guardados en {teams_csv_path}")
+    teams_parquet_directory = './temp/extract/teams'
+    venues_parquet_directory = './temp/extract/venues'
 
+    teams_parquet_path = os.path.join(teams_parquet_directory, 'teams_argentina.parquet')
+    venues_parquet_path = os.path.join(venues_parquet_directory, 'venues_argentina.parquet')
 
-    with open(venues_csv_path, mode='w', newline='', encoding='utf-8') as venues_file:
-        venues_writer = csv.writer(venues_file)
-        venues_writer.writerow(['id', 'name', 'city', 'capacity', 'address'])
-        for team in teams:
-            venue = team['venue']
-            if venue['id'] is not None:  
-                venues_writer.writerow([venue['id'], venue['name'], venue['city'], venue['capacity'], venue['address']])
+    os.makedirs(teams_parquet_directory, exist_ok=True)
+    os.makedirs(venues_parquet_directory, exist_ok=True)
+
+    teams_df = pd.DataFrame([{
+        'id': team['team']['id'],
+        'name': team['team']['name'],
+        'country': team['team']['country'],
+        'logo': team['team']['logo'],
+        'stadium_id': team['venue']['id']
+    } for team in teams])
     
-    print(f"Datos de estadios de Argentina guardados en {venues_csv_path}")
+    teams_df.to_parquet(teams_parquet_path, index=False)
+    print(f"Datos de equipos de Argentina guardados en {teams_parquet_path}")
 
-    return teams_csv_path, venues_csv_path
+    # Guardar datos de estadios
+    venues_df = pd.DataFrame([{
+        'id': team['venue']['id'],
+        'name': team['venue']['name'],
+        'city': team['venue']['city'],
+        'capacity': team['venue']['capacity'],
+        'address': team['venue']['address']
+    } for team in teams if team['venue']['id'] is not None])
+    
+    venues_df.to_parquet(venues_parquet_path, index=False)
+    print(f"Datos de estadios de Argentina guardados en {venues_parquet_path}")
+
+    return teams_parquet_path, venues_parquet_path
 
 
-def transform_teams(csv_path):
-    teams_df = pd.read_csv(csv_path)
+def transform_teams(parquet_path: str) -> pd.DataFrame:
+    """
+    Transforma los datos de equipos para filtrar los equipos de Argentina.
+    
+    Args:
+        parquet_path (str): Ruta del archivo Parquet con los datos de equipos.
+    
+    Returns:
+        pd.DataFrame: DataFrame filtrado con los equipos de Argentina.
+    """
+    teams_df = pd.read_parquet(parquet_path)
     argentina_teams_df = teams_df[teams_df['country'] == 'Argentina']
     return argentina_teams_df
 
 
-def transform_venues(csv_path):
-    venues_df = pd.read_csv(csv_path)
+def transform_venues(parquet_path: str) -> pd.DataFrame:
+    """
+    Transforma los datos de estadios eliminando duplicados.
+    
+    Args:
+        parquet_path (str): Ruta del archivo Parquet con los datos de estadios.
+    
+    Returns:
+        pd.DataFrame: DataFrame de estadios sin duplicados.
+    """
+    venues_df = pd.read_parquet(parquet_path)
     venues_df = venues_df.drop_duplicates(subset=['id'])
     return venues_df
 
 
-def load_to_redshift(csv_path, table_name):
+def load_to_redshift(parquet_path: str, table_name: str):
+    """
+    Carga los datos de equipos y estadios a Redshift desde archivos Parquet.
+    
+    Args:
+        parquet_path (str): Ruta del archivo Parquet con los datos.
+        table_name (str): Nombre de la tabla en Redshift.
+    """
     conn = redshift_utils.get_redshift_connection()
     schema = redshift_utils.get_schema()
-
 
     with conn.cursor() as cursor:
         cursor.execute(f'DELETE FROM "{schema}"."{table_name}"')
         conn.commit()
         print(f"Datos eliminados de la tabla {schema}.{table_name}.")
-    
-    df = pd.read_csv(csv_path)
+
+    df = pd.read_parquet(parquet_path)
     
     wr.redshift.to_sql(
         df=df,
@@ -84,28 +125,24 @@ def load_to_redshift(csv_path, table_name):
 
 
 def etl_teams_and_venues():
-
-    teams_csv_path, venues_csv_path = extract_teams_venues()
-    print("teams_csv_path retornado: ", teams_csv_path)
-    print("venues_csv_path retornado: ", venues_csv_path)
-
-
-    argentina_teams_df = transform_teams(teams_csv_path)
-    venues_df = transform_venues(venues_csv_path)
-
-    argentina_teams_csv_path = './temp/extract/teams/transformed_teams_arg.csv'
-    venues_csv_transformed_path = './temp/extract/venues/transformed_venues_arg.csv'
-
-    argentina_teams_df.to_csv(argentina_teams_csv_path, index=False)
-    venues_df.to_csv(venues_csv_transformed_path, index=False)
-
-    print("Datos transformados guardados.")
-
-
-    load_to_redshift(argentina_teams_csv_path, 'team')
+    """
+    Proceso ETL para extraer, transformar y cargar datos de equipos y estadios en Redshift.
+    """
+    teams_parquet_path, venues_parquet_path = extract_teams_venues()
     
+    argentina_teams_df = transform_teams(teams_parquet_path)
+    venues_df = transform_venues(venues_parquet_path)
 
-    load_to_redshift(venues_csv_transformed_path, 'venue')
+    argentina_teams_parquet_path = './temp/extract/teams/transformed_teams_arg.parquet'
+    venues_parquet_transformed_path = './temp/extract/venues/transformed_venues_arg.parquet'
+
+    argentina_teams_df.to_parquet(argentina_teams_parquet_path, index=False)
+    venues_df.to_parquet(venues_parquet_transformed_path, index=False)
+
+    print("Datos transformados guardados en Parquet.")
+
+    load_to_redshift(argentina_teams_parquet_path, 'team')
+    load_to_redshift(venues_parquet_transformed_path, 'venue')
 
 
 if __name__ == '__main__':
