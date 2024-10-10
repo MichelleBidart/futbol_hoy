@@ -15,10 +15,11 @@ class Config:
     VENUES_FOLDER = 'venues'
     VENUES_ARGENTINA_FILE = 'venues_argentina.parquet'
 
-
-    argentina_teams_parquet_path = './temp/extract/teams/transformed_teams_arg.parquet'
-    venues_parquet_transformed_path = './temp/extract/venues/transformed_venues_arg.parquet'
-
     TABLE_NAME_COUNTRY = "country"
     TABLE_NAME_TEAM = "team"
     TABLE_NAME_VENUE = "venue"
+
+
+    MATCH_FOLDER = 'fixture'
+    TABLE_MATCH = "match"
+    TABLE_STATUS = "status"

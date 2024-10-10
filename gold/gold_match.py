@@ -1,9 +1,19 @@
 import awswrangler as wr
 import utils.redshift_utils as redshift_utils
 from datetime import datetime
+import pandas as pd
+from typing import Optional
 
+def get_total_gols_for_liga(conn) -> pd.DataFrame:
+    """
+    Obtiene las estadísticas de goles por liga desde la base de datos Redshift.
 
-def get_total_gols_for_liga(conn):
+    Args:
+        conn: Conexión activa a la base de datos Redshift.
+
+    Returns:
+        pd.DataFrame: DataFrame con las estadísticas de goles por liga.
+    """
     query = """
     SELECT  
         l.league_name,
@@ -24,13 +34,19 @@ def get_total_gols_for_liga(conn):
     """
 
     df = wr.redshift.read_sql_query(sql=query, con=conn)
-
-
     df['execution_date'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
     return df
 
-def get_results_by_team_for_current_leagues(conn):
+def get_results_by_team_for_current_leagues(conn) -> pd.DataFrame:
+    """
+    Obtiene las estadísticas de victorias, empates y derrotas de los equipos en ligas actuales.
+
+    Args:
+        conn: Conexión activa a la base de datos Redshift.
+
+    Returns:
+        pd.DataFrame: DataFrame con los resultados por equipo.
+    """
     query = """WITH home_team_stats AS (
     SELECT 
         t.name AS team_name,
@@ -56,7 +72,6 @@ away_team_stats AS (
         t.name AS team_name,
         m.season_year,
         l.league_name,
-        -- Solo estadísticas de visitante
         SUM(CASE WHEN m.away_score > m.home_score THEN 1 ELSE 0 END) AS away_victory,
         SUM(CASE WHEN m.away_score = m.home_score THEN 1 ELSE 0 END) AS away_tie,
         SUM(CASE WHEN m.away_score < m.home_score THEN 1 ELSE 0 END) AS away_defeat
@@ -101,21 +116,33 @@ ORDER BY
     df['execution_date'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     return df
 
+def insert_results_to_redshift(df: pd.DataFrame, conn, new_table: str) -> None:
+    """
+    Inserta los datos en una tabla específica de Redshift.
 
-def insert_results_to_redshift(df, conn, new_table):
-
+    Args:
+        df (pd.DataFrame): DataFrame con los datos a insertar.
+        conn: Conexión activa a la base de datos Redshift.
+        new_table (str): Nombre de la tabla donde se insertarán los datos.
+    """
     wr.redshift.to_sql(
         df=df,
         con=conn,
         schema="2024_michelle_bidart_schema",
-        table = new_table,
+        table=new_table,
         mode="replace"  
     )
 
-
-def get_statistics():
+def get_statistics() -> None:
+    """
+    Orquesta el proceso de obtención y carga de las estadísticas de goles y resultados por equipo en Redshift.
+    """
     conn = redshift_utils.get_redshift_connection()
+
+    # Obtener y cargar las estadísticas de goles
     df = get_total_gols_for_liga(conn)
     insert_results_to_redshift(df, conn, 'league_goal_statistics')
+
+    # Obtener y cargar los resultados por equipo
     df = get_results_by_team_for_current_leagues(conn)
     insert_results_to_redshift(df, conn, 'results_team_by_leagues')
