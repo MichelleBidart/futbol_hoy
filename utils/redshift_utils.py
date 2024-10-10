@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv('/opt/airflow/.env')
-#load_dotenv('.env')
 
 def get_redshift_connection():
     redshift_user = os.getenv('REDSHIFT_USER')
@@ -12,8 +11,6 @@ def get_redshift_connection():
     redshift_host = os.getenv('REDSHIFT_HOST')
     redshift_port = os.getenv('REDSHIFT_PORT')
     redshift_dbname = os.getenv('REDSHIFT_DBNAME')
-
-    # Parámetros de conexión a Redshift
     conn_params = {
         'host': redshift_host,
         'database': redshift_dbname,
@@ -22,7 +19,6 @@ def get_redshift_connection():
         'port': int(redshift_port),
     }
 
-    # Establecer conexión con redshift_connector
     conn = redshift_connector.connect(**conn_params)
     print("Conexión exitosa con Redshift mediante redshift_connector")
     return conn

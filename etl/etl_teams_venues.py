@@ -8,7 +8,6 @@ import os
 from typing import List, Dict
 
 load_dotenv('/opt/airflow/.env')
-#load_dotenv('.env')
 
 def extract_teams_venues() -> tuple:
     """
@@ -22,10 +21,7 @@ def extract_teams_venues() -> tuple:
     }
     url, headers = api_url_configurations.get_api_url_headers()
     response = requests.get(f'{url}/teams', headers=headers, params=params)
-
-    if response.status_code != 200:
-        raise Exception(f"Error al obtener los datos de {url}teams")
-
+    response.raise_for_status()
     teams = response.json()['response']
     
     teams_parquet_directory = './temp/extract/teams'
@@ -48,7 +44,7 @@ def extract_teams_venues() -> tuple:
     teams_df.to_parquet(teams_parquet_path, index=False)
     print(f"Datos de equipos de Argentina guardados en {teams_parquet_path}")
 
-    # Guardar datos de estadios
+
     venues_df = pd.DataFrame([{
         'id': team['venue']['id'],
         'name': team['venue']['name'],

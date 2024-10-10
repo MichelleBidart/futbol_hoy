@@ -19,8 +19,7 @@ def ingest_data_fixture(fixture_date):
     
     response = requests.get(url + "fixtures", headers=headers, params=params)
 
-    if response.status_code != 200:
-        raise Exception("error al querer buscar el fixture del dia") 
+    response.raise_for_status()
 
     data = response.json()
 
