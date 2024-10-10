@@ -3,7 +3,7 @@ import pandas as pd
 from airflow.models import Variable
 import utils.redshift_utils as redshift_utils
 import utils.api_url_configurations as api_url_configurations
-import utils.delete_table as delete_table
+from utils import delete_table
 import awswrangler as wr
 
 def extract_leagues_etl():
@@ -48,7 +48,7 @@ def save_leagues_redshift(leagues_data):
     conn = redshift_utils.get_redshift_connection()
     schema = Variable.get("redshift_schema")
     table_name = "league"
-    delete_table(conn, table_name, schema )
+    delete_table.delete_table_from_refshift(conn, table_name, schema )
 
     wr.redshift.to_sql(
         df=df_leagues,

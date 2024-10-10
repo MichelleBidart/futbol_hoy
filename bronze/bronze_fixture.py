@@ -12,15 +12,9 @@ def ingest_data_fixture(fixture_date):
     """
     se traen los datos de football api y se guardan en un parquet en una carpeta temporal 
     """
-    url, headers = api_url_configurations()
-    url = "https://v3.football.api-sports.io/fixtures"
+    url, headers = api_url_configurations.get_api_url_headers()
     params = {
         'date': fixture_date  
-    }
-    api_key = Variable.get("x-apisports-key")
-    
-    headers = {
-        'x-apisports-key': api_key
     }
     
     response = requests.get(url + "fixtures", headers=headers, params=params)

@@ -1,4 +1,4 @@
-def delete_table(conn, table_name, schema):
+def delete_table_from_refshift(conn, table_name, schema):
     with conn.cursor() as cursor:
         cursor.execute(f'DELETE FROM "{schema}"."{table_name}"')
         conn.commit()
