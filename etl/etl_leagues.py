@@ -12,8 +12,10 @@ def extract_leagues_etl():
         'country': 'Argentina'
     }
     response = requests.get(url + "leagues", headers=headers, params=params)
+    response.raise_for_status()
+    
     data = response.json()
-
+    
     leagues = data['response']
     return leagues
 
@@ -48,7 +50,7 @@ def save_leagues_redshift(leagues_data):
     conn = redshift_utils.get_redshift_connection()
     schema = Variable.get("redshift_schema")
     table_name = "league"
-    database_operations.delete_table_from_refshift(conn, table_name, schema )
+    database_operations.delete_table_from_redshift(conn, table_name, schema )
 
     wr.redshift.to_sql(
         df=df_leagues,

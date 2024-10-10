@@ -17,7 +17,7 @@ def extract_countries() -> None:
     Returns:
         list: Lista de diccionarios con los datos de los países (formato: code, name, flag).
     """
-    #llama al endpoint de 
+    #llama al endpoint de countris
     url, headers = api_url_configurations.get_api_url_headers()
     response = requests.get(f'{url}/countries', headers=headers)
     response.raise_for_status()
@@ -65,7 +65,7 @@ def load_to_redshift():
     schema = redshift_utils.get_schema()
 
     #Se borrar los datos de la tabla country. Se hace esto para que no haya duplicados
-    database_operations.delete_table_from_refshift(conn, constants.Config.TABLE_NAME_COUNTRY, schema)
+    database_operations.delete_table_from_redshift(conn, constants.Config.TABLE_NAME_COUNTRY, schema)
 
     df = parquet_operations.read_parquet_file(constants.Config.CONTRIES_ARGENINA_FILE_READ)
 
