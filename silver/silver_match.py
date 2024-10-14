@@ -25,8 +25,8 @@ def clean_fixture(fixtures: List[dict]) -> Tuple[Optional[pd.DataFrame], Optiona
         return None, None
     
     conn = redshift_utils.get_redshift_connection()
-    schema = Variable.get("redshift_schema")
-
+    schema = redshift_utils.get_schema()
+    
     match_data = []
     status_data = []
 
