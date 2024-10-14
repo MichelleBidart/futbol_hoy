@@ -48,7 +48,7 @@ def save_leagues_redshift(leagues_data):
     df_leagues = pd.DataFrame(leagues_data).drop_duplicates()
 
     conn = redshift_utils.get_redshift_connection()
-    schema = Variable.get("redshift_schema")
+    schema = redshift_utils.get_schema()
     table_name = "league"
     database_operations.delete_table_from_redshift(conn, table_name, schema )
 
