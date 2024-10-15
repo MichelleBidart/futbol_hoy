@@ -23,6 +23,10 @@ def extract_countries() -> None:
     response.raise_for_status()
 
     countries = response.json()['response']
+
+    if not countries:
+        print(f'la respuesta de countries esta vacía')
+
     print(f'los countries son: {countries}')
     df_countries = pd.DataFrame(countries)
 
