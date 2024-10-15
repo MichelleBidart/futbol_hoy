@@ -23,8 +23,9 @@ def extract_countries() -> None:
     response.raise_for_status()
 
     countries = response.json()['response']
-
+    print(f'los countries son: {countries}')
     df_countries = pd.DataFrame(countries)
+
 
     parquet_operations.save_parquet(
     os.path.join(constants.Config.BASE_TEMP_PATH, constants.Config.COUNTRY_FOLDER), 
@@ -42,6 +43,8 @@ def transform_countries() -> None:
     """
 
     countries_df = parquet_operations.read_parquet_file(constants.Config.CONTRIES_ARGENINA_FILE_READ)
+
+    print(f'transform countries {countries_df}')
 
     if countries_df['name'].isnull().any():
         raise ValueError("La columna 'name' contiene valores nulos, lo cual no está permitido.")

@@ -20,6 +20,7 @@ def clean_fixture(fixtures: List[dict]) -> Tuple[Optional[pd.DataFrame], Optiona
   
     fixture_argentina = [fixture for fixture in fixtures if fixture['league']['country'] == 'Argentina']
 
+    print(f'El fixture de Argentina es: {fixture_argentina}')
     if not fixture_argentina:
         print('No fixture data was pulled.')
         return None, None
@@ -86,6 +87,10 @@ def clean_fixture(fixtures: List[dict]) -> Tuple[Optional[pd.DataFrame], Optiona
 
     df_match = pd.DataFrame(match_data)
     df_status = pd.DataFrame(status_data)
+    print(f'los resultados del match son {df_match}')
+    print(f'los resultados del status son {df_status}')
+
+    df_status = pd.DataFrame(status_data)
 
     if df_match.empty and df_status.empty:
         print("No hay datos para cargar.")
@@ -115,6 +120,6 @@ def clean_fixture(fixtures: List[dict]) -> Tuple[Optional[pd.DataFrame], Optiona
         index=False
     )
 
-    print("Datos cargados en Redshift correctamente.")
+    print(f'Datos cargados en Redshift correctamente.{df_match}')
 
-    return df_match, df_status
+    return match_data, status_data

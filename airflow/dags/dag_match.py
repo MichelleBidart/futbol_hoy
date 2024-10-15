@@ -19,14 +19,19 @@ def run_silver(**kwargs):
     """
 
     fixtures = kwargs['ti'].xcom_pull(task_ids='run_bronze')
-    match_data, status_data = silver_match.clean_fixture(fixtures)
+    match_data = silver_match.clean_fixture(fixtures)
 
     print("Fixtures for Argentina transformed and pushed to XCom")
 
+    return match_data
+
 def run_gold(**kwargs):
+    
     """
     se crean diferentes tablas con estadisticas
     """
+    match_data = kwargs['ti'].xcom_pull(task_ids='run_silver')
+    print(f'los resultados de silver son {match_data}')
     gold_match.get_statistics()
     print("End of loading data")
 

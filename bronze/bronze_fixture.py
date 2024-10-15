@@ -28,6 +28,7 @@ def ingest_data_fixture(fixture_date: str) -> list:
     response.raise_for_status()
 
     data = response.json()
+
     df_day_fixture = pd.DataFrame(data['response'])
 
     parquet_filename = f"match_{fixture_date}.parquet"

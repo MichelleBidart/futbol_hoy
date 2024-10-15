@@ -125,12 +125,13 @@ def insert_results_to_redshift(df: pd.DataFrame, conn, new_table: str) -> None:
         conn: Conexión activa a la base de datos Redshift.
         new_table (str): Nombre de la tabla donde se insertarán los datos.
     """
+    
     wr.redshift.to_sql(
         df=df,
         con=conn,
         schema="2024_michelle_bidart_schema",
         table=new_table,
-        mode="replace"  
+        mode='overwrite'  
     )
 
 def get_statistics() -> None:
@@ -139,10 +140,9 @@ def get_statistics() -> None:
     """
     conn = redshift_utils.get_redshift_connection()
 
-    # Obtener y cargar las estadísticas de goles
     df = get_total_gols_for_liga(conn)
     insert_results_to_redshift(df, conn, 'league_goal_statistics')
 
-    # Obtener y cargar los resultados por equipo
+
     df = get_results_by_team_for_current_leagues(conn)
     insert_results_to_redshift(df, conn, 'results_team_by_leagues')
