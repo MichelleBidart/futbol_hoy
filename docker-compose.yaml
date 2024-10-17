@@ -72,8 +72,8 @@ x-airflow-common:
     # The following line can be used to set a custom config file, stored in the local config folder
     # If you want to use it, outcomment it and replace airflow.cfg with the name of your config file
     # AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
-    _AIRFLOW_WWW_USER_USERNAME : 'admin123'
-    _AIRFLOW_WWW_USER_PASSWORD : 'admin' 
+    _AIRFLOW_WWW_USER_USERNAME : 'admin'
+    _AIRFLOW_WWW_USER_PASSWORD : 'admin123' 
   env_file:
     - ./.env
   
@@ -274,8 +274,8 @@ services:
       REDSHIFT_SCHEMA: ${REDSHIFT_SCHEMA}
       _AIRFLOW_DB_MIGRATE: 'true'
       _AIRFLOW_WWW_USER_CREATE: 'true'
-      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-admin123}
-      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-admin}
+      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-admin}
+      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-admin123}
       _PIP_ADDITIONAL_REQUIREMENTS: ''
     user: "0:0"
     volumes:

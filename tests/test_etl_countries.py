@@ -5,25 +5,42 @@ import pytest
 import pandas as pd
 from utils import parquet_operations
 
-@patch('utils.parquet_operations.read_parquet_file') 
-def test_transform_countries_name_null(mock_read_parquet):
+def test_transform_countries_name_null():
 
-    mock_read_parquet.return_value = pd.DataFrame({
-        'name': ['Argentina', 'Brasil', None],  
-        'code': ['AR1234567890', 'BR', 'EC']  
-    })
+    countries = [
+        {'name': 'Argentina', 'code': 'AR1234567890'},
+        {'name': 'Brasil', 'code': 'BR'},
+        {'name': None, 'code': 'EC'}
+    ]
+
 
     with pytest.raises(ValueError, match="La columna 'name' contiene valores nulos, lo cual no está permitido."):
-        transform_countries()
+        transform_countries(countries)
 
-@patch('utils.parquet_operations.read_parquet_file') 
-def test_transform_countries_new(mock_read_parquet):
+def test_transform_countries_code_too_long():
 
-    mock_read_parquet.return_value = pd.DataFrame({
-        'name': ['Argentina', 'Brasil', 'Ecuador'],  
-        'code': ['AR1234567890', 'BR', 'EC']  
-    })
+    countries = [
+        {'name': 'Argentina', 'code': 'AR1234567890'},
+        {'name': 'Brasil', 'code': 'BR'},
+        {'name': 'Ecuador', 'code': 'masdediezcaracteres'}
+    ]
+
 
     with pytest.raises(ValueError, match="La columna 'code' debe ser null o un string con un máximo de 10 caracteres."):
-        transform_countries()
+        transform_countries(countries)
 
+def test_transform_countries_success():
+
+    countries = [
+        {'name': 'Argentina', 'code': 'AR'},
+        {'name': 'Brasil', 'code': 'BR'},
+        {'name': 'Ecuador', 'code': 'EC'}
+    ]
+
+
+    result_df = transform_countries(countries)
+
+    assert isinstance(result_df, pd.DataFrame)
+    assert not result_df.empty
+    assert 'name' in result_df.columns
+    assert 'code' in result_df.columns

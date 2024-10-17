@@ -16,8 +16,6 @@ Esta aplicación fue desarrollada para analizar los partidos de fútbol en Argen
 
 ## Instalaciones y Configuraciones
 
-Instalaciones que utilice:
-
 - Python
 - Docker
 - AWS Redshift
@@ -75,11 +73,9 @@ futbol_hoy/
 │   ├── dags/                        
 ├── bronze/                  
 ├── silver/                 
-├── gold/                  
-├── config/                                  
+├── gold/                                                 
 ├── etl/                    
-├── scripts/                
-├── temp/                   
+├── scripts/                                 
 ├── tests/                 
 ├── utils/                  
 ├── .env                    
@@ -87,7 +83,8 @@ futbol_hoy/
 ├── docker-compose.yaml    
 ├── Dockerfile                                        
 ├── README.md               
-└── requirements.txt  ```project-tree      
+└── requirements.txt  
+```      
 
 
 ## Arquitectura del Proyecto
@@ -128,7 +125,7 @@ El proyecto realiza varios llamados a la API para extraer los datos de diferente
 
 ### Autenticación
 
-Todos los llamados a la API requieren autenticación mediante una **API Key**. La clave de acceso se almacena en un archivo `.env` para mantener la seguridad y evitar la exposición de credenciales sensibles. La autenticación se realiza mediante la inclusión de la API Key en el encabezado de la solicitud HTTP:
+Todos los llamados a la API requieren autenticación mediante una **API Key**. La clave de acceso se almacena en un archivo `.env` para mantener la seguridad y evitar la exposición de credenciales sensibles
 
 ## Dags de Apache Airflow
 
@@ -142,8 +139,8 @@ El proyecto cuenta con dos DAGs principales para la orquestación de tareas en A
 El sistema calcula las siguientes estadísticas:
 
 1. **Estadísticas de Goles por Liga:**
-   - Se calculan los goles totales anotados en cada liga, diferenciando entre los goles de equipos locales y visitantes, y proporcionando un total combinado por temporada.
-
+   - Se calculan los goles totales anotados en cada liga
+   
 2. **Resultados por Equipo en Ligas Actuales:**
    - Se analiza el rendimiento de los equipos en ligas actuales, calculando el número de victorias, empates y derrotas, tanto en partidos locales como de visitante.
 

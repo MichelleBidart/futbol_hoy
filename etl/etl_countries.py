@@ -9,7 +9,7 @@ from utils import constants
 from utils import database_operations
 from datetime import datetime
 import os
-from typing import List, Dict
+
 
 def extract_countries() -> List[Dict[str, str]]:
     """
@@ -100,12 +100,12 @@ def etl_countries():
  
     countries = extract_countries()
 
+
     save_to_parquet(pd.DataFrame(countries), constants.Config.COUNTRY_FOLDER, constants.Config.COUNTRIES_FILE)
 
     df_countries_transform = transform_countries(countries)
 
     save_to_parquet(df_countries_transform, constants.Config.COUNTRY_FOLDER, constants.Config.COUNTRIES_TRANSFORM_FILE)
-
     load_to_redshift(df_countries_transform)
 
     print("finaliza la ejecución de etl_contries, {time}", datetime.now())
