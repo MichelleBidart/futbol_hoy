@@ -28,7 +28,7 @@ def ingest_data_fixture(fixture_date: str) -> list:
 
     data = response.json()['response']
 
-    if not fixtures:
+    if not data:
         raise ValueError("No se obtuvieron datos de la API, fallando la tarea.")
 
 
