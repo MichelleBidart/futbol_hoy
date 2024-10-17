@@ -6,7 +6,8 @@ class Config:
     BASE_TEMP_PATH = './temp/extract/'
     
     COUNTRY_FOLDER = 'countries'
-    CONTRIES_FILE = 'countries.parquet'
+    COUNTRIES_FILE = 'countries.parquet'
+    COUNTRIES_TRANSFORM_FILE = 'countries_transform.parquet'
     CONTRIES_ARGENINA_FILE_READ = './temp/extract/countries/countries.parquet'
     
     TEAM_FOLDER = 'teams'
@@ -23,3 +24,4 @@ class Config:
     MATCH_FOLDER = 'fixture'
     TABLE_MATCH = "match"
     TABLE_STATUS = "status"
+    TABLE_LEAGUE = "league"
