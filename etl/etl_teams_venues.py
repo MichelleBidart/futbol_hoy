@@ -74,20 +74,7 @@ def transform_venues(teams_data: List[Dict[str, any]]) -> pd.DataFrame:
     venues_df = venues_df.drop_duplicates(subset=['id'])
     return venues_df
 
-def save_to_parquet(df: pd.DataFrame, folder: str, file_name: str):
-    """
-    Guarda un DataFrame en un archivo Parquet.
-
-    Args:
-        df (pd.DataFrame): DataFrame que se va a guardar.
-        folder (str): Carpeta donde se guardará el archivo.
-        file_name (str): Nombre del archivo Parquet.
-    """
-    parquet_path = os.path.join(constants.Config.BASE_TEMP_PATH, folder)
-    parquet_operations.save_parquet(parquet_path, file_name, df)
-    print(f'DataFrame guardado en {parquet_path}/{file_name}')
-
-def load_to_redshift(table_name: str, folder: str, file_name: str, df :pd.DataFrame):
+def load_to_redshift(table_name: str, df :pd.DataFrame):
     """
     Carga un archivo Parquet en Redshift.
 
@@ -128,13 +115,8 @@ def etl_teams_and_venues():
     teams_df = transform_teams(teams_data)
     venues_df = transform_venues(teams_data)
 
-
-    save_to_parquet(teams_df, constants.Config.TEAM_FOLDER, constants.Config.TEAM_ARGENTINA_FILE)
-    save_to_parquet(venues_df, constants.Config.VENUES_FOLDER, constants.Config.VENUES_ARGENTINA_FILE)
-
-
-    load_to_redshift(constants.Config.TABLE_NAME_TEAM, constants.Config.TEAM_FOLDER, constants.Config.TEAM_ARGENTINA_FILE, teams_df)
-    load_to_redshift(constants.Config.TABLE_NAME_VENUE, constants.Config.VENUES_FOLDER, constants.Config.VENUES_ARGENTINA_FILE, venues_df)
+    load_to_redshift(constants.Config.TABLE_NAME_TEAM, teams_df)
+    load_to_redshift(constants.Config.TABLE_NAME_VENUE, venues_df)
 
     print("Proceso ETL finalizado correctamente.")
 

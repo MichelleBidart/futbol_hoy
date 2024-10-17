@@ -88,6 +88,7 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/bronze:/opt/airflow/bronze
     - ${AIRFLOW_PROJ_DIR:-.}/gold:/opt/airflow/gold
     - ${AIRFLOW_PROJ_DIR:-.}/silver:/opt/airflow/silver
+    - ${AIRFLOW_PROJ_DIR:-.}/temp:/opt/airflow/temp
 
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
@@ -280,6 +281,7 @@ services:
     user: "0:0"
     volumes:
       - ${AIRFLOW_PROJ_DIR:-.}:/sources
+       - ./temp:/opt/airflow/temp
 
   airflow-cli:
     <<: *airflow-common

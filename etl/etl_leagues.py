@@ -10,6 +10,7 @@ from utils import constants
 from utils import parquet_operations
 import os
 from utils import constants
+from datetime import datetime
 
 def extract_leagues() -> List[Dict[str, any]]:
     """
@@ -63,19 +64,6 @@ def transform_leagues(leagues: List[Dict[str, any]]) -> pd.DataFrame:
     df_leagues = pd.DataFrame(leagues_data).drop_duplicates()
     return df_leagues
 
-def save_to_parquet(df: pd.DataFrame, folder: str, file_name: str):
-    """
-    Guarda un DataFrame en un archivo Parquet.
-
-    Args:
-        df (pd.DataFrame): DataFrame que se va a guardar.
-        folder (str): Carpeta donde se guardará el archivo.
-        file_name (str): Nombre del archivo Parquet.
-    """
-    parquet_path = os.path.join(constants.Config.BASE_TEMP_PATH, folder)
-    parquet_operations.save_parquet(parquet_path, file_name, df)
-    print(f'DataFrame guardado en {parquet_path}/{file_name}')
-
 def load_leagues_to_redshift(df_leagues: pd.DataFrame):
     """
     Carga un DataFrame de ligas en Redshift.
@@ -113,8 +101,6 @@ def etl_leagues():
     leagues = extract_leagues()
 
     df_leagues = transform_leagues(leagues)
-
-    save_to_parquet(df_leagues, constants.Config.LEAGUE_FOLDER, constants.Config.LEAGUE_FILE)
 
     load_leagues_to_redshift(df_leagues)
 

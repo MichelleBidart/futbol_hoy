@@ -140,7 +140,7 @@ El sistema calcula las siguientes estadísticas:
 
 1. **Estadísticas de Goles por Liga:**
    - Se calculan los goles totales anotados en cada liga
-   
+
 2. **Resultados por Equipo en Ligas Actuales:**
    - Se analiza el rendimiento de los equipos en ligas actuales, calculando el número de victorias, empates y derrotas, tanto en partidos locales como de visitante.
 
@@ -167,7 +167,7 @@ Para ejecutar la carga de partidos en fechas anteriores, sigue estos pasos:
 
 2. Ejecuta el comando de backfill para las fechas deseadas:
     ```bash
-    airflow dags backfill -s 2024-03-03 -e 2024-10-07 <dag_id>
+    airflow dags backfill -s yyyy-mm-dd -e yyyy-mm-dd <dag_id>
     ```
-   Reemplaza `<dag_id>` con el ID del DAG que deseas ejecutar.
+   Reemplaza `<dag_id>` con el ID del DAG que deseas ejecutar, daily_fixtures_etl_dag_argentina
 

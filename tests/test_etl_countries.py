@@ -44,3 +44,21 @@ def test_transform_countries_success():
     assert not result_df.empty
     assert 'name' in result_df.columns
     assert 'code' in result_df.columns
+
+def test_transform_countries_remove_duplicates():
+
+    countries = [
+        {'name': 'Argentina', 'code': 'AR'},
+        {'name': 'Brasil', 'code': 'BR'},
+        {'name': 'Brasil', 'code': 'BR'},  
+        {'name': 'Ecuador', 'code': 'EC'}
+    ]
+
+    result_df = transform_countries(countries)
+
+    assert isinstance(result_df, pd.DataFrame)
+    assert not result_df.empty
+
+    assert result_df['code'].duplicated().sum() == 0
+
+    assert len(result_df) == 3

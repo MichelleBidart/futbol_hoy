@@ -79,20 +79,8 @@ def load_to_redshift(df_countries_transform : pd.DataFrame):
         index=False
     )
 
-    print(f"Datos cargados en la tabla {schema}.{constants.Config.TABLE_NAME_COUNTRY} desde el archivo Parquet.")
+    print(f"Datos cargados en la tabla {schema}.{constants.Config.TABLE_NAME_COUNTRY}.")
 
-def save_to_parquet(df: pd.DataFrame, folder: str, file_name: str):
-    """
-    Guarda un DataFrame en un archivo Parquet.
-
-    Args:
-        df (pd.DataFrame): DataFrame que se va a guardar.
-        folder (str): Carpeta donde se guardará el archivo.
-        file_name (str): Nombre del archivo Parquet.
-    """
-    parquet_path = os.path.join(constants.Config.BASE_TEMP_PATH, folder)
-    parquet_operations.save_parquet(parquet_path, file_name, df)
-    print(f'DataFrame guardado en {parquet_path}/{file_name}')
 
 def etl_countries():
 
@@ -100,12 +88,8 @@ def etl_countries():
  
     countries = extract_countries()
 
-
-    save_to_parquet(pd.DataFrame(countries), constants.Config.COUNTRY_FOLDER, constants.Config.COUNTRIES_FILE)
-
     df_countries_transform = transform_countries(countries)
 
-    save_to_parquet(df_countries_transform, constants.Config.COUNTRY_FOLDER, constants.Config.COUNTRIES_TRANSFORM_FILE)
     load_to_redshift(df_countries_transform)
 
     print("finaliza la ejecución de etl_contries, {time}", datetime.now())

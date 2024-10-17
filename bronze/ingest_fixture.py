@@ -1,4 +1,3 @@
-import os
 import pandas as pd
 import requests
 from airflow.models import Variable
@@ -8,7 +7,7 @@ from utils import api_url_configurations, parquet_operations, constants
 def ingest_data_fixture(fixture_date: str) -> list:
     """
     Obtiene los datos de los partidos (fixtures) de una fecha específica desde la API de fútbol, 
-    los guarda en un archivo Parquet y retorna la respuesta en formato JSON.
+  y retorna la respuesta en formato JSON.
 
     Args:
         fixture_date (str): La fecha de los partidos en formato 'YYYY-MM-DD' para los cuales se desean obtener datos.
@@ -27,12 +26,10 @@ def ingest_data_fixture(fixture_date: str) -> list:
 
     response.raise_for_status()
 
-    data = response.json()
+    data = response.json()['response']
 
-    df_day_fixture = pd.DataFrame(data['response'])
-
-    parquet_filename = f"match_{fixture_date}.parquet"
-    parquet_operations.save_parquet(os.path.join(constants.Config.BASE_TEMP_PATH,constants.Config.MATCH_FOLDER), parquet_filename, df_day_fixture)
+    if not fixtures:
+        raise ValueError("No se obtuvieron datos de la API, fallando la tarea.")
 
 
-    return data['response']
+    return data
