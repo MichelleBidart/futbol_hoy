@@ -1,28 +1,51 @@
 import requests
 import pandas as pd
-from airflow.models import Variable
+import awswrangler as wr
+from datetime import datetime
+from typing import List, Dict
 import utils.redshift_utils as redshift_utils
 import utils.api_url_configurations as api_url_configurations
 import utils.database_operations as database_operations
-import awswrangler as wr
+from utils import constants
+from utils import parquet_operations
+import os
+from utils import constants
+from datetime import datetime
 
-def extract_leagues_etl():
+def extract_leagues() -> List[Dict[str, any]]:
+    """
+    Extrae los datos de ligas desde la API y los retorna como una lista de diccionarios.
+
+    Returns:
+        List[Dict[str, any]]: Lista de diccionarios con los datos de las ligas.
+    """
     url, headers = api_url_configurations.get_api_url_headers()
-    params = {
-        'country': 'Argentina'
-    }
-    response = requests.get(url + "leagues", headers=headers, params=params)
+    params = {'country': 'Argentina'}
+    response = requests.get(f'{url}/leagues', headers=headers, params=params)
     response.raise_for_status()
-    
-    data = response.json()
-    
-    leagues = data['response']
+
+    leagues = response.json().get('response', [])
+
+    if not leagues:
+        raise Exception('No se encontraron datos en la respuesta de ligas.')
+
+    print(f'Datos de ligas extraídos: {len(leagues)} ligas')
     return leagues
 
-def transform_leagues(leagues):
-    if not leagues:
-        raise ValueError('No leagues data was pulled.')
+def transform_leagues(leagues: List[Dict[str, any]]) -> pd.DataFrame:
+    """
+    Transforma los datos de ligas y devuelve un DataFrame.
 
+    Args:
+        leagues (List[Dict[str, any]]): Lista de diccionarios con los datos de las ligas.
+
+    Returns:
+        pd.DataFrame: DataFrame con los datos transformados de las ligas.
+    """
+    if not leagues:
+        raise ValueError('No se han proporcionado datos de ligas para la transformación.')
+
+    print('Transformando datos de ligas...')
     leagues_data = []
     for league_info in leagues:
         league = league_info['league']
@@ -38,29 +61,50 @@ def transform_leagues(leagues):
                 'current': season['current']
             })
 
-    print("Leagues transformed and pushed to XCom") 
-    return leagues_data
-
-def save_leagues_redshift(leagues_data):
-    if not leagues_data:
-        raise ValueError('No leagues data found in XCom.')
-
     df_leagues = pd.DataFrame(leagues_data).drop_duplicates()
+    return df_leagues
 
+def load_leagues_to_redshift(df_leagues: pd.DataFrame):
+    """
+    Carga un DataFrame de ligas en Redshift.
+
+    Args:
+        df_leagues (pd.DataFrame): DataFrame con los datos transformados de las ligas.
+    """
     conn = redshift_utils.get_redshift_connection()
     schema = redshift_utils.get_schema()
-    table_name = "league"
-    database_operations.delete_table_from_redshift(conn, table_name, schema )
+    table_name = constants.Config.TABLE_LEAGUE
+
+
+    database_operations.delete_table_from_redshift(conn, table_name, schema)
 
     wr.redshift.to_sql(
         df=df_leagues,
         con=conn,
         table=table_name,
         schema=schema,
-        mode=table_name, 
+        mode='append',
         use_column_names=True,
         lock=True,
         index=False
     )
 
-    print("Leagues data saved to Redshift")
+    print(f"Datos de ligas cargados en la tabla {schema}.{table_name}")
+
+def etl_leagues():
+    """
+    Ejecuta el proceso ETL para los datos de ligas.
+    """
+    start_time = datetime.now()
+    print(f"Iniciando el proceso ETL para las ligas: {start_time}")
+
+    leagues = extract_leagues()
+
+    df_leagues = transform_leagues(leagues)
+
+    load_leagues_to_redshift(df_leagues)
+
+    print("Proceso ETL para las ligas finalizado correctamente.")
+
+if __name__ == '__main__':
+    etl_leagues()

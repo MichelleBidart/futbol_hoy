@@ -6,7 +6,7 @@ from typing import List, Tuple, Optional
 from utils import constants
 
 
-def clean_fixture(fixtures: List[dict]) -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]:
+def run_silver(**kwargs):
     """
     Procesa los fixtures para la liga de Argentina, valida la integridad de los datos y los carga en Redshift.
     
@@ -17,6 +17,7 @@ def clean_fixture(fixtures: List[dict]) -> Tuple[Optional[pd.DataFrame], Optiona
         Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]: DataFrames de los datos de los partidos (match) y estados (status).
         Devuelve None en caso de no haber datos para cargar.
     """
+    fixtures = kwargs['ti'].xcom_pull(task_ids='bronze_run')
   
     fixture_argentina = [fixture for fixture in fixtures if fixture['league']['country'] == 'Argentina']
 
@@ -89,8 +90,6 @@ def clean_fixture(fixtures: List[dict]) -> Tuple[Optional[pd.DataFrame], Optiona
     df_status = pd.DataFrame(status_data)
     print(f'los resultados del match son {df_match}')
     print(f'los resultados del status son {df_status}')
-
-    df_status = pd.DataFrame(status_data)
 
     if df_match.empty and df_status.empty:
         print("No hay datos para cargar.")

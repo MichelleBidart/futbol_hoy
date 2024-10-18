@@ -10,41 +10,40 @@ from utils import database_operations
 from datetime import datetime
 import os
 
-def extract_countries() -> None:
+
+def extract_countries() -> List[Dict[str, str]]:
     """
     Obtiene los datos de los países de la API de fútbol, los guarda en formato Parquet y retorna la lista de países.
 
     Returns:
         list: Lista de diccionarios con los datos de los países (formato: code, name, flag).
     """
-    #llama al endpoint de countris
+    #llama al endpoint de countries
     url, headers = api_url_configurations.get_api_url_headers()
     response = requests.get(f'{url}/countries', headers=headers)
     response.raise_for_status()
 
     countries = response.json()['response']
+
+    if not countries:
+        raise Exception(f'la respuesta de {url}/countries viene vacía')
+
     print(f'los countries son: {countries}')
-    df_countries = pd.DataFrame(countries)
 
+    return countries   
 
-    parquet_operations.save_parquet(
-    os.path.join(constants.Config.BASE_TEMP_PATH, constants.Config.COUNTRY_FOLDER), 
-    constants.Config.CONTRIES_FILE, 
-    df_countries
-    )    
-
-def transform_countries() -> None:
+def transform_countries(countries : List[Dict[str, str]]) -> pd.DataFrame:
     """
     Valida que las columnas sean las esperadas, que 'code' no sea null, que sea varchar de hasta 10 caracteres,
     elimina duplicados en la columna 'code', transforma los datos en un DataFrame y crea un archivo Parquet.
     
     Args:
-        countries (List[Dict[str, str]]): Lista de diccionarios con datos de países.
+        countries (List[Dict[str, str, str]]): Lista de diccionarios con datos de países.
     """
 
-    countries_df = parquet_operations.read_parquet_file(constants.Config.CONTRIES_ARGENINA_FILE_READ)
+    print(f'transform countries {countries}')
 
-    print(f'transform countries {countries_df}')
+    countries_df = pd.DataFrame(countries)
 
     if countries_df['name'].isnull().any():
         raise ValueError("La columna 'name' contiene valores nulos, lo cual no está permitido.")
@@ -54,15 +53,14 @@ def transform_countries() -> None:
     
     countries_df.drop_duplicates(subset='code', inplace=True)
 
-    parquet_operations.save_parquet(constants.Config.BASE_TEMP_PATH.join(constants.Config.COUNTRY_FOLDER),constants.Config.CONTRIES_FILE ,countries_df)
+    return countries_df
 
 
-def load_to_redshift():
+def load_to_redshift(df_countries_transform : pd.DataFrame):
     """
     Carga los datos de países desde un archivo Parquet a Redshift.
     Elimina previamente los datos existentes en la tabla 'country'.
     """
-
 
     conn = redshift_utils.get_redshift_connection()
     schema = redshift_utils.get_schema()
@@ -70,10 +68,8 @@ def load_to_redshift():
     #Se borrar los datos de la tabla country. Se hace esto para que no haya duplicados
     database_operations.delete_table_from_redshift(conn, constants.Config.TABLE_NAME_COUNTRY, schema)
 
-    df = parquet_operations.read_parquet_file(constants.Config.CONTRIES_ARGENINA_FILE_READ)
-
     wr.redshift.to_sql(
-        df=df,
+        df=df_countries_transform,
         con=conn,
         table=constants.Config.TABLE_NAME_COUNTRY,
         schema=schema,
@@ -83,21 +79,20 @@ def load_to_redshift():
         index=False
     )
 
-    print(f"Datos cargados en la tabla {schema}.{constants.Config.TABLE_NAME_COUNTRY} desde el archivo Parquet.")
-
+    print(f"Datos cargados en la tabla {schema}.{constants.Config.TABLE_NAME_COUNTRY}.")
 
 
 def etl_countries():
 
     print("empieza a ejecutarse el archivo etl_contries, {time}", datetime.now())
  
-    extract_countries()
+    countries = extract_countries()
 
-    transform_countries()
-    
-    load_to_redshift()
+    df_countries_transform = transform_countries(countries)
 
-    print("finaliza la ejecucion de etl_contries, {time}", datetime.now())
+    load_to_redshift(df_countries_transform)
+
+    print("finaliza la ejecución de etl_contries, {time}", datetime.now())
 
 
 if __name__ == '__main__':

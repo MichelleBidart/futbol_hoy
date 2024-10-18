@@ -3,121 +3,121 @@ import requests
 import utils.redshift_utils as redshift_utils
 import pandas as pd
 import awswrangler as wr
-from dotenv import load_dotenv
 import os
 from typing import List, Dict
 from utils import constants
 from utils import parquet_operations
 from utils import database_operations
+from datetime import datetime
 
+def extract_teams_venues() -> List[Dict[str, any]]:
+    """
+    Extrae datos de equipos y estadios desde la API y los retorna como una lista de diccionarios.
 
-def extract_teams_venues() -> None:
+    Returns:
+        List[Dict[str, any]]: Lista de diccionarios con los datos de los equipos y estadios.
     """
-    Extrae datos de equipos y estadios desde la API y los guarda en archivos Parquet.
-    
-    """
-    #la version gratuita pide al menos un parametro
-    params = {
-        'country': 'Argentina'
-    }
+    params = {'country': 'Argentina'}
     url, headers = api_url_configurations.get_api_url_headers()
     response = requests.get(f'{url}/teams', headers=headers, params=params)
     response.raise_for_status()
 
-    teams = response.json()['response']
+    teams_data = response.json().get('response', [])
 
+    if not teams_data:
+        raise Exception('La respuesta de la API de equipos está vacía.')
+
+    print(f'Datos de equipos extraídos: {len(teams_data)} equipos')
+    return teams_data
+
+def transform_teams(teams_data: List[Dict[str, any]]) -> pd.DataFrame:
+    """
+    Transforma los datos de equipos y devuelve un DataFrame.
+
+    Args:
+        teams_data (List[Dict[str, any]]): Lista de diccionarios con los datos de los equipos.
+
+    Returns:
+        pd.DataFrame: DataFrame con los datos transformados de los equipos.
+    """
+    print('Transformando datos de equipos')
     teams_df = pd.DataFrame([{
         'id': team['team']['id'],
         'name': team['team']['name'],
         'country': team['team']['country'],
         'logo': team['team']['logo'],
         'stadium_id': team['venue']['id']
-    } for team in teams])
-    
+    } for team in teams_data])
 
+    teams_df = teams_df.drop_duplicates(subset=['id'])
+    return teams_df
+
+def transform_venues(teams_data: List[Dict[str, any]]) -> pd.DataFrame:
+    """
+    Transforma los datos de estadios y devuelve un DataFrame.
+
+    Args:
+        teams_data (List[Dict[str, any]]): Lista de diccionarios con los datos de los equipos.
+
+    Returns:
+        pd.DataFrame: DataFrame con los datos transformados de los estadios.
+    """
+    print('Transformando datos de estadios...')
     venues_df = pd.DataFrame([{
         'id': team['venue']['id'],
         'name': team['venue']['name'],
         'city': team['venue']['city'],
         'capacity': team['venue']['capacity'],
         'address': team['venue']['address']
-    } for team in teams if team['venue']['id'] is not None])
-    
+    } for team in teams_data if team['venue']['id'] is not None])
 
-    parquet_operations.save_parquet(os.path.join(constants.Config.BASE_TEMP_PATH, constants.Config.TEAM_FOLDER) 
-                                    ,constants.Config.TEAM_ARGENTINA_FILE, teams_df)
-    
-    parquet_operations.save_parquet(os.path.join(constants.Config.BASE_TEMP_PATH,constants.Config.VENUES_FOLDER),
-                                    constants.Config.VENUES_ARGENTINA_FILE, venues_df)
+    venues_df = venues_df.drop_duplicates(subset=['id'])
+    return venues_df
 
-
-def transform_teams() -> None:
+def load_to_redshift(table_name: str, df :pd.DataFrame):
     """
-    Transforma los datos de equipos para filtrar los equipos de Argentina.
-    
-    """
-    argentina_teams_df = parquet_operations.read_parquet_file(os.path.join(constants.Config.BASE_TEMP_PATH,constants.Config.TEAM_FOLDER,constants.Config.TEAM_ARGENTINA_FILE))
+    Carga un archivo Parquet en Redshift.
 
-    argentina_teams_df.drop_duplicates(subset=['id'])
-
-    parquet_operations.save_parquet(os.path.join(constants.Config.BASE_TEMP_PATH, constants.Config.TEAM_FOLDER) 
-                                    ,constants.Config.TEAM_ARGENTINA_FILE, argentina_teams_df)
-
-def transform_venues() -> None:
-    """
-    Transforma los datos de estadios eliminando duplicados.
-    
-    """
-    venues_argentina_df = parquet_operations.read_parquet_file(os.path.join(constants.Config.BASE_TEMP_PATH,constants.Config.VENUES_FOLDER,constants.Config.VENUES_ARGENTINA_FILE))
-    
-
-    venues_argentina_df = venues_argentina_df.drop_duplicates(subset=['id'])
-
-    
-    parquet_operations.save_parquet(os.path.join(constants.Config.BASE_TEMP_PATH,constants.Config.VENUES_FOLDER),
-                                    constants.Config.VENUES_ARGENTINA_FILE, venues_argentina_df)
-
-def load_to_redshift(table_name : str, folder : str, file : str) -> None:
-    """
-    Carga los datos de equipos y estadios a Redshift desde archivos Parquet.
-    
     Args:
         table_name (str): Nombre de la tabla en Redshift.
+        folder (str): Carpeta donde se encuentra el archivo Parquet.
+        file_name (str): Nombre del archivo Parquet.
     """
     conn = redshift_utils.get_redshift_connection()
     schema = redshift_utils.get_schema()
 
     database_operations.delete_table_from_redshift(conn, table_name, schema)
 
-    df = parquet_operations.read_parquet_file(os.path.join(constants.Config.BASE_TEMP_PATH, folder, file))
-
-    
     wr.redshift.to_sql(
         df=df,
         con=conn,
         table=table_name,
         schema=schema,
-        mode='append', 
+        mode='append',
         use_column_names=True,
         lock=True,
         index=False
     )
-    print(f"Datos cargados en la tabla {schema}.{table_name}")
 
+    print(f"Datos cargados en la tabla {schema}.{table_name}")
 
 def etl_teams_and_venues():
     """
-    Proceso ETL para extraer, transformar y cargar datos de equipos y estadios en Redshift.
+    Ejecuta el proceso ETL para los datos de equipos y estadios.
     """
-    extract_teams_venues()
-    
-    transform_teams()
-    transform_venues()
+    start_time = datetime.now()
+    print(f"Iniciando el proceso ETL para equipos y estadios: {start_time}")
 
-    print("Datos transformados guardados en Parquet.")
 
-    load_to_redshift(constants.Config.TABLE_NAME_TEAM, constants.Config.TEAM_FOLDER, constants.Config.TEAM_ARGENTINA_FILE)
-    load_to_redshift(constants.Config.TABLE_NAME_VENUE, constants.Config.VENUES_FOLDER,constants.Config.VENUES_ARGENTINA_FILE)
+    teams_data = extract_teams_venues()
+
+    teams_df = transform_teams(teams_data)
+    venues_df = transform_venues(teams_data)
+
+    load_to_redshift(constants.Config.TABLE_NAME_TEAM, teams_df)
+    load_to_redshift(constants.Config.TABLE_NAME_VENUE, venues_df)
+
+    print("Proceso ETL finalizado correctamente.")
 
 
 if __name__ == '__main__':

@@ -4,7 +4,7 @@ from airflow.utils.dates import days_ago
 import etl.etl_leagues as etl_leagues
 
 def extract_leagues(**kwargs):
-   return etl_leagues.extract_leagues_etl()
+   return etl_leagues.extract_leagues()
 
 def transform_leagues(**kwargs):
     leagues = kwargs['ti'].xcom_pull(task_ids='extract_leagues')
@@ -17,9 +17,7 @@ def transform_leagues(**kwargs):
 def save_leagues_redshift(**kwargs):
     leagues_data = kwargs['ti'].xcom_pull(task_ids='transform_leagues', key='leagues_data')
     
-    etl_leagues.save_leagues_redshift(leagues_data)
-
-
+    etl_leagues.load_leagues_to_redshift(leagues_data)
 
 with DAG(
     dag_id='all_leagues_argentina_dag',

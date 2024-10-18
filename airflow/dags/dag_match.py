@@ -1,65 +1,49 @@
+from datetime import timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from datetime import timedelta
-from bronze import bronze_fixture
-from silver import silver_match
 from airflow.utils.dates import days_ago
-from gold import gold_match
 
-def run_bronze(execution_date, **kwargs):
-    """
-    Se hace la ingesta de los fixtures del día anterior
-    """
-    fixture_date = (execution_date - timedelta(days=1)).strftime('%Y-%m-%d')
-    return bronze_fixture.ingest_data_fixture(fixture_date)
 
-def run_silver(**kwargs):
-    """
-    filtra los fixture y los guarda en la bse de datos
-    """
+from bronze.run_bronze import run_bronze  
+from silver.run_silver import run_silver  
+from gold.run_gold import run_gold 
 
-    fixtures = kwargs['ti'].xcom_pull(task_ids='run_bronze')
-    match_data = silver_match.clean_fixture(fixtures)
 
-    print("Fixtures for Argentina transformed and pushed to XCom")
-
-    return match_data
-
-def run_gold(**kwargs):
-    
-    """
-    se crean diferentes tablas con estadisticas
-    """
-    match_data = kwargs['ti'].xcom_pull(task_ids='run_silver')
-    print(f'los resultados de silver son {match_data}')
-    gold_match.get_statistics()
-    print("End of loading data")
+default_args = {
+    "owner": "michelle_bidart",
+    "depends_on_past": False,
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 1,
+    "max_active_runs":1,
+    "retry_delay": timedelta(minutes=5), 
+}
 
 with DAG(
-    dag_id='daily_fixtures_etl_dag_argentina',
-    schedule_interval='@daily',
-    start_date=days_ago(1), 
-    catchup=False,
-    max_active_runs=1, 
-    default_args={
-        'depends_on_past': False,
-        'retries': 1
-    }
+    dag_id="daily_fixtures_etl_dag_argentina",
+    default_args=default_args,
+    description="DAG para procesar datos de fixtures y cargar en Redshift",
+    schedule_interval="@daily",  
+    start_date=days_ago(1),  
+    catchup=False,  
 ) as dag:
-    
+
     bronze_task = PythonOperator(
-        task_id='run_bronze',  
-        python_callable=run_bronze
+        task_id="bronze_run",
+        python_callable=run_bronze,
+        provide_context=True,
     )
 
     silver_task = PythonOperator(
-        task_id='run_silver',
-        python_callable=run_silver
+        task_id="silver_run",
+        python_callable=run_silver,
+        provide_context=True,
     )
 
     gold_task = PythonOperator(
-        task_id='run_gold',
-        python_callable=run_gold
+        task_id="gold_run",
+        python_callable=run_gold,
+        provide_context=True,
     )
 
-    bronze_task >> silver_task >> gold_task  
+    bronze_task >> silver_task >> gold_task
