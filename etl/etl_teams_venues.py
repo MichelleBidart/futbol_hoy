@@ -111,7 +111,6 @@ def etl_teams_and_venues():
 
     teams_data = extract_teams_venues()
 
-
     teams_df = transform_teams(teams_data)
     venues_df = transform_venues(teams_data)
 

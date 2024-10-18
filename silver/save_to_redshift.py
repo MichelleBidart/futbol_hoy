@@ -3,7 +3,7 @@ import utils.redshift_utils as redshift_utils
 import awswrangler as wr
 from utils import constants
 
-def save_fixture_to_database(df_match, df_status) -> None:
+def save_fixture_to_database(df_match, df_status, conn) -> None:
     """
     Guarda los datos de los partidos y los estados en la base de datos Redshift.
 
@@ -11,11 +11,6 @@ def save_fixture_to_database(df_match, df_status) -> None:
         df_match (pd.DataFrame): DataFrame que contiene los datos de los partidos.
         df_status (pd.DataFrame): DataFrame que contiene los datos de los estados.
     """
-
-    print(f'entra aca 11111')
-
-    conn = redshift_utils.get_redshift_connection()
-    print(f'sale de la conexion')
 
     schema = redshift_utils.get_schema()
     print(f'schema {schema}')

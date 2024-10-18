@@ -3,7 +3,7 @@ import utils.redshift_utils as redshift_utils
 from utils import constants
 
 
-def clean_fixture(fixtures):
+def clean_fixture(fixtures, conn):
     """
     Procesa los fixtures para la liga de Argentina, valida la integridad de los datos 
     
@@ -14,17 +14,15 @@ def clean_fixture(fixtures):
         Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]: DataFrames de los datos de los partidos (match) y estados (status).
         Devuelve None en caso de no haber datos para cargar.
     """
-  
+    #busco solo las ligas argentinas
     fixture_argentina = [fixture for fixture in fixtures if fixture['league']['country'] == 'Argentina']
 
-    print(f'El fixture de torneos Argentinos es: {fixture_argentina}')
-
-    print(f'El fixture de Argentina es: {fixture_argentina}')
     if not fixture_argentina:
         print('No fixture data was pulled.')
         return None, None
     
-    conn = redshift_utils.get_redshift_connection()
+    print(f'El fixture de torneos Argentinos es: {fixture_argentina}')
+    
     schema = redshift_utils.get_schema()
     
     match_data = []
@@ -35,8 +33,8 @@ def clean_fixture(fixtures):
         score = fixture_info['score']
         league_info = fixture_info['league']
 
-        home_score = (score['halftime']['home'] or 0) + (score['fulltime']['home'] or 0) + (score['extratime']['home'] or 0)
-        away_score = (score['halftime']['away'] or 0) + (score['fulltime']['away'] or 0) + (score['extratime']['away'] or 0)
+        home_score = (score['fulltime']['home'] or 0) + (score['extratime']['home'] or 0)
+        away_score = (score['fulltime']['away'] or 0) + (score['extratime']['away'] or 0)
 
         match_id = fixture['id']
         venue_id = fixture['venue']['id']
@@ -54,18 +52,13 @@ def clean_fixture(fixtures):
         existing_team_away = pd.read_sql(f'SELECT 1 FROM "{schema}".team WHERE id = {team_away_id}', con=conn)
         existing_league = pd.read_sql(f'SELECT 1 FROM "{schema}".league WHERE league_id = {league_id}', con=conn)
 
-        print(f'pasa los existing ')
 
         if existing_team_home.empty or existing_team_away.empty or existing_league.empty:
             raise Exception(f"Validación de FK fallida para el partido {match_id}. Omitiendo este fixture.")
 
-        print(f'pasa la validacion de fk ')
-
-        date_transform = pd.to_datetime(fixture['date']).strftime('%Y-%m-%d %H:%M:%S')
-
         match_data.append({
             'id': match_id,
-            'date': date_transform,
+            'date': fixture['date'],
             'timezone': fixture['timezone'],
             'referee': fixture.get('referee', None),
             'venue_id': venue_id,
@@ -80,6 +73,7 @@ def clean_fixture(fixtures):
             'period_first': fixture['periods']['first'],
             'period_second': fixture['periods']['second']
         })
+        
 
         status = fixture['status']
         status_data.append({
@@ -89,5 +83,13 @@ def clean_fixture(fixtures):
     if not status_data or not match_data:
         print("No hay datos en match_data o status_data.")
         return None, None
-    print(f'status data {status_data}')
-    return match_data, status_data
+
+    df_match = pd.DataFrame(match_data)
+    df_status = pd.DataFrame(status_data)
+
+    if df_match.empty and df_status.empty:
+        print("No hay df datos para cargar.")
+        return None, None
+
+
+    return df_match, df_status

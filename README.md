@@ -162,7 +162,7 @@ Para ejecutar la carga de partidos en fechas anteriores, sigue estos pasos:
 
 1. Accede al contenedor del servidor web de Airflow:
     ```bash
-    docker exec -it <airflow-webserver-id> bash
+    docker exec -it <airflow-webserver-id> /bin/bash
     ```
 
 2. Ejecuta el comando de backfill para las fechas deseadas:
