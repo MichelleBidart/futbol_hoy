@@ -40,6 +40,9 @@ Copiar el fichero .env en la raiz
 ```bash
 cd futbol_hoy
 ```
+### Airflow
+#### user: admin
+#### password: admin123
 
 ## Modelo de Datos
 
