@@ -1,7 +1,5 @@
-import pandas as pd
 import requests
-from airflow.models import Variable
-from utils import api_url_configurations, parquet_operations, constants
+from utils import api_url_configurations
 
 
 def ingest_data_fixture(fixture_date: str) -> list:

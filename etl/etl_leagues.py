@@ -7,10 +7,9 @@ import utils.redshift_utils as redshift_utils
 import utils.api_url_configurations as api_url_configurations
 import utils.database_operations as database_operations
 from utils import constants
-from utils import parquet_operations
-import os
 from utils import constants
 from datetime import datetime
+import os
 
 def extract_leagues() -> List[Dict[str, any]]:
     """

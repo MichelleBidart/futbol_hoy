@@ -1,7 +1,7 @@
 from silver.transform_data import clean_fixture
 from silver.save_to_redshift import save_fixture_to_database
 from utils import redshift_utils
-
+import os
 
 def run_silver(**kwargs):
     fixtures = kwargs['ti'].xcom_pull(task_ids='bronze_run')

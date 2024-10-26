@@ -1,6 +1,5 @@
 import pandas as pd
 import os
-from dotenv import load_dotenv
 
 def save_parquet(directory: str, file_name: str, df: pd.DataFrame):
     """
