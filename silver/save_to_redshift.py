@@ -13,13 +13,13 @@ def save_fixture_to_database(df_match, df_status, conn) -> None:
     """
 
     schema = redshift_utils.get_schema()
-    print(f'schema {schema}')
+
     
     wr.redshift.to_sql(
         df=df_match,
         con=conn,
         table=constants.Config.TABLE_MATCH,
-        schema="2024_michelle_bidart_schema",
+        schema=schema,
         mode='append',
         use_column_names=True,
         lock=True,
@@ -30,7 +30,7 @@ def save_fixture_to_database(df_match, df_status, conn) -> None:
         df=df_status,
         con=conn,
         table=constants.Config.TABLE_STATUS,
-        schema="2024_michelle_bidart_schema",
+        schema=schema,
         mode='append',
         use_column_names=True,
         lock=True,

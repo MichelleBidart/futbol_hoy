@@ -36,5 +36,5 @@ def read_parquet(file_path: str) -> list:
     """
     
     df = pd.read_parquet(file_path)
-    print(df.to_dict(orient='records'))    
+
     return df.to_dict(orient='records')
