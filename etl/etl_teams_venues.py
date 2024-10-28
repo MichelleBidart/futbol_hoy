@@ -3,10 +3,8 @@ import requests
 import utils.redshift_utils as redshift_utils
 import pandas as pd
 import awswrangler as wr
-import os
 from typing import List, Dict
 from utils import constants
-from utils import parquet_operations
 from utils import database_operations
 from datetime import datetime
 

@@ -2,7 +2,6 @@ import awswrangler as wr
 import utils.redshift_utils as redshift_utils
 from datetime import datetime
 import pandas as pd
-from typing import Optional
 
 def get_total_gols_for_liga(conn) -> pd.DataFrame:
     """
@@ -14,7 +13,9 @@ def get_total_gols_for_liga(conn) -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame con las estadísticas de goles por liga.
     """
-    query = """
+
+    schema = redshift_utils.get_schema()
+    query = f"""
     SELECT  
         l.league_name,
         m.season_year,
@@ -22,9 +23,9 @@ def get_total_gols_for_liga(conn) -> pd.DataFrame:
         SUM(m.away_score) AS total_goles_visitante,
         SUM(m.home_score + m.away_score) AS total_goles
     FROM 
-        "2024_michelle_bidart_schema".match m 
+        "{schema}".match m 
     INNER JOIN 
-        "2024_michelle_bidart_schema".league l 
+        "{schema}".league l 
     ON 
         m.league_id = l.league_id 
     AND
@@ -47,7 +48,8 @@ def get_results_by_team_for_current_leagues(conn) -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame con los resultados por equipo.
     """
-    query = """WITH home_team_stats AS (
+    schema = redshift_utils.get_schema()
+    query = f"""WITH home_team_stats AS (
     SELECT 
         t.name AS team_name,
         m.season_year,
@@ -56,11 +58,11 @@ def get_results_by_team_for_current_leagues(conn) -> pd.DataFrame:
         SUM(CASE WHEN m.home_score = m.away_score THEN 1 ELSE 0 END) AS local_tie,
         SUM(CASE WHEN m.home_score < m.away_score THEN 1 ELSE 0 END) AS local_defeat
     FROM 
-        "2024_michelle_bidart_schema".match m
+        "{schema}".match m
     INNER JOIN 
-        "2024_michelle_bidart_schema".team t ON m.team_home_id = t.id
+        "{schema}".team t ON m.team_home_id = t.id
     INNER JOIN 
-        "2024_michelle_bidart_schema".league l ON m.league_id = l.league_id
+        "{schema}".league l ON m.league_id = l.league_id
         AND m.season_year = l.season_year
     WHERE 
         l.current = TRUE
@@ -76,11 +78,11 @@ away_team_stats AS (
         SUM(CASE WHEN m.away_score = m.home_score THEN 1 ELSE 0 END) AS away_tie,
         SUM(CASE WHEN m.away_score < m.home_score THEN 1 ELSE 0 END) AS away_defeat
     FROM 
-        "2024_michelle_bidart_schema".match m
+        "{schema}".match m
     INNER JOIN 
-        "2024_michelle_bidart_schema".team t ON m.team_away_id = t.id
+        "{schema}".team t ON m.team_away_id = t.id
     INNER JOIN 
-        "2024_michelle_bidart_schema".league l ON m.league_id = l.league_id
+       "{schema}".league l ON m.league_id = l.league_id
         AND m.season_year = l.season_year
     WHERE 
         l.current = TRUE
@@ -125,11 +127,11 @@ def insert_results_to_redshift(df: pd.DataFrame, conn, new_table: str) -> None:
         conn: Conexión activa a la base de datos Redshift.
         new_table (str): Nombre de la tabla donde se insertarán los datos.
     """
-    
+    schema = redshift_utils.get_schema()
     wr.redshift.to_sql(
         df=df,
         con=conn,
-        schema="2024_michelle_bidart_schema",
+        schema=schema,
         table=new_table,
         mode='overwrite'  
     )

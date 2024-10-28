@@ -1,9 +1,7 @@
-from unittest.mock import patch, Mock
-from etl.etl_countries import extract_countries
 from etl.etl_countries import transform_countries    
 import pytest
 import pandas as pd
-from utils import parquet_operations
+
 
 def test_transform_countries_name_null():
 

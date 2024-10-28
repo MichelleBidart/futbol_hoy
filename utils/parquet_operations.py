@@ -1,6 +1,5 @@
 import pandas as pd
 import os
-from dotenv import load_dotenv
 
 def save_parquet(directory: str, file_name: str, df: pd.DataFrame):
     """
@@ -10,9 +9,6 @@ def save_parquet(directory: str, file_name: str, df: pd.DataFrame):
     :param file_name: Nombre del archivo parquet.
     :param df: DataFrame que se guardará en el archivo.
     """
-    absolute_directory = os.path.abspath(directory)
-    print(f"Directorio completo: {absolute_directory}")
-    print(f'el directorio es {directory}')
 
     file_path = os.path.join(directory, file_name)
     
@@ -24,4 +20,21 @@ def save_parquet(directory: str, file_name: str, df: pd.DataFrame):
 
     print(f'Archivo Parquet guardado en: {file_path}.')
 
+    return file_path
 
+
+
+def read_parquet(file_path: str) -> list:
+    """
+    Lee un archivo Parquet y devuelve su contenido como una lista de listas.
+    
+    Parámetros:
+    - file_path (str): Ruta del archivo Parquet a leer.
+
+    Retorna:
+    - list: Lista de listas donde cada sublista representa una fila en el DataFrame.
+    """
+    
+    df = pd.read_parquet(file_path)
+
+    return df.to_dict(orient='records')
